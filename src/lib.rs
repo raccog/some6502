@@ -91,6 +91,7 @@ pub trait MemoryBus {
         u16::from_le_bytes([lo, hi])
     }
 
+    /// Zero-Page Indirect, Y-Indexed mode.
     fn indirect_y(&self, address: u8, y: u8) -> u16 {
         let (lo, carry) = self.read(address as u16).overflowing_add(y);
         let hi = {
@@ -105,10 +106,13 @@ pub trait MemoryBus {
         u16::from_le_bytes([lo, hi])
     }
 
+    /// Read a byte from the 16-bit address bus.
     fn read(&self, address: u16) -> u8;
 
+    /// Write a byte to the 16-bit address bus.
     fn write(&mut self, address: u16, value: u8);
 
+    /// Zero Page mode.
     fn zero_idx(&self, address: u8, idx: u8) -> u16 {
         address.overflowing_add(idx).0 as u16
     }
@@ -139,12 +143,18 @@ pub trait MemoryBus {
 /// * `adc_ind_x` - ADC indirect,X
 /// * `adc_ind_y` - ADC indirect,Y
 ///
-/// As shown above, each function starts with its shortened name and ends with the instruction mode.
+/// As shown above, each function starts with its shortened name and ends with the addressing mode.
+///
+/// Functions that end in common, (`adc_common`) do not use any addressing mode. The common functions are
+/// used to share implementions between an instruction with different addressing modes.
 pub trait InstructionExecution {
+    /// Returns the memory bus connected to this execution engine.
     fn bus(&mut self) -> &mut dyn MemoryBus;
 
+    /// Returns the registers connected to this execution engine.
     fn registers(&mut self) -> &mut Registers;
 
+    /// Common implementation for the ADC instruction.
     fn adc_common(&mut self, value: u8) {
         let registers = self.registers();
         // TODO: Check decimal flag
